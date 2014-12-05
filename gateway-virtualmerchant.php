@@ -189,7 +189,7 @@ function woocommerce_virtualmerchant_init() {
 			<h3><?php _e( 'VirtualMerchant', 'woothemes' ); ?></h3>
 			<p>	
 				<?php _e( 'VirtualMerchant works by adding credit card fields on the checkout and then sending the details to VirtualMerchant for verification.', 'woothemes' ); ?><br />
-				<?php _e( "<strong><u>WARNING:</u></strong> WooCommerce is currently set to use '" . get_woocommerce_currency() . "' currency.", 'woothemes'); ?>
+				<?php _e( "<strong><u>WARNING2:</u></strong> WooCommerce is currently set to use '" . get_woocommerce_currency() . "' currency.", 'woothemes'); ?>
 				<?php _e( ' Please make sure your Virtual Merchant account is set to accept this currency.', 'woothemes'); ?>
 			</p>
 			<table class="form-table">
