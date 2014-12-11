@@ -456,6 +456,7 @@ function woocommerce_virtualmerchant_init() {
 					'ssl_last_name'				=> $order->billing_last_name,
 					'ssl_city'					=> $order->billing_city,
 					'ssl_state'					=> $order->billing_state,
+					'ssl_transaction_currency'  => $order->get_order_currency(),
 					'ssl_result_format'			=> 'ascii',
 					'ssl_test_mode' 			=>'false',
 				);
@@ -479,7 +480,12 @@ function woocommerce_virtualmerchant_init() {
 			}
 			
 			$post_data = rtrim( $post_data, "&" );
-									
+			
+			// Print messages for testing
+			
+			$woocommerce->add_error(__( 'Payment Error', 'woothemes' ) . ': ' . $post_data . '');
+
+			/* Commented out for testing
 			// Verify the transaction (CVV and AVS checks)
 			try{
 				//execute wp_remote_post
@@ -510,6 +516,7 @@ function woocommerce_virtualmerchant_init() {
 				$woocommerce->add_error(__( 'There was a connection error at verification', 'woothemes' ) . ': "' . $e->getMessage() . '"' );
 				return;
 			}
+			*/
 						
 			/**
 			 *Check for Valid CVV in the wp_remote_post results
@@ -546,7 +553,8 @@ function woocommerce_virtualmerchant_init() {
 					return true;
 				}
 			}
-
+			
+			/* Commented out for testing
 			//determine if the authorization was successful
 			if ( isset( $authorization_output['ssl_result'] ) && ( $authorization_output['ssl_result'] == 0 ) && 
 				cvv_check( $authorization_output['ssl_cvv2_response'], $cvv_enabled )  && 
@@ -580,7 +588,7 @@ function woocommerce_virtualmerchant_init() {
 					$woocommerce->add_error(__( 'There was a connection error at payment', 'woothemes' ) . ': "' . $e->getMessage() . '"' );
 					return;
 				}
-
+					
 				//Assign transactionid if it is set in the wp_remote_post results
 				if ( isset( $output['ssl_txn_id'] ) ) {
 					$transactionid = $output['ssl_txn_id'];
@@ -621,6 +629,7 @@ function woocommerce_virtualmerchant_init() {
 					$woocommerce->add_error(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '');
 				}
 				
+			
 			// There was an error during the verification process	
 			} else {	
 				if( isset( $authorization_output['ssl_result'] ) && ( $authorization_output['ssl_result'] != 0 ) && 
@@ -645,7 +654,7 @@ function woocommerce_virtualmerchant_init() {
 				$order->add_order_note( $cancelNote );
 				$order->update_status( 'Failed',__( 'Payment method was declined.', 'woothemes' ) );
 				$woocommerce->add_error(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '');
-			}
+			}*/
 		}
 
 		/**
