@@ -146,14 +146,14 @@ function woocommerce_virtualmerchant_init() {
      									'Mastercard' => 'MasterCard',
      									'American Express' => 'American Express',
      									'Discover' => 'Discover',
-     								) // array of options for select/multiselects only
+     								)
      						),	
 				
 				'cvv_enabled' => array(
 								'title' => __( 'Enable CSC Authentication', 'woothemes' ), 
 								'label' => __( 'Enable CSC Authentication', 'woothemes' ), 
 								'type' => 'checkbox', 
-								'description' => __( 'This option must also be enabled on your VirtualMerchant account as a Post-Processing Rule under Business Rules. Contact VirtualMerchant if you have any questions.', 'woothemes' ), 
+								//'description' => __( 'This option must also be enabled on your VirtualMerchant account as a Post-Processing Rule under Business Rules. Contact VirtualMerchant if you have any questions.', 'woothemes' ), 
 								'default' => 'no'
 							),	
 				'avs_options' => array(
