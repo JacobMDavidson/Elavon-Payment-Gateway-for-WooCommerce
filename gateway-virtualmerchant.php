@@ -294,14 +294,6 @@ function woocommerce_virtualmerchant_init() {
 					<span id="virtualmerchant_card_csc_description">3 digits usually found on the back of the card.</span>
 				</p>
 				<div class="clear"></div>
-				<p class="form-row form-row-first">
-					<label for="cc-currency"><?php echo __( 'Select Currency', 'woocommerce' ) ?> <span class="required" style="display: inline;">*</span></label>
-					<select name="virtualmerchant_currency" style="width: 100%" id="cc-currency">
-						<option value="CAD" <?php if($this->get_country_code() != "US") {echo'selected="selected"';}?>><?php _e( 'Canadian Dollars (CAD)', 'woocommerce' ) ?></option>
-						<option value="USD" <?php if($this->get_country_code() == "US") {echo'selected="selected"';}?>><?php _e( 'US Dollars (USD)', 'woocommerce' ) ?></option>
-					</select>
-				</p>
-				<div class="clear"></div>
 			</fieldset>
 
 			<script type="text/javascript">
@@ -334,9 +326,11 @@ function woocommerce_virtualmerchant_init() {
 			$card_csc			= isset( $_POST['virtualmerchant_card_csc'] ) ? $_POST['virtualmerchant_card_csc'] : '';
 			$card_exp_month		= isset( $_POST['virtualmerchant_card_expiration_month'] ) ? $_POST['virtualmerchant_card_expiration_month'] : '';
 			$card_exp_year		= isset( $_POST['virtualmerchant_card_expiration_year'] ) ? $_POST['virtualmerchant_card_expiration_year'] : '';
-			$card_currency		= isset( $_POST['virtualmerchant_currency'] ) ? $_POST['virtualmerchant_currency'] : '';
+			
+			// Set the card currency to USD if the billing country is not Canada 
+			$card_currency		= $this->get_country_code() == "CA" ? 'CAD' : 'USD';
 
-			//Format and combine credit card month and year
+			// Format and combine credit card month and year
 			$card_expiration = $card_exp_month . substr( $card_exp_year, -2 );
 
 			// Format credit card number
@@ -353,7 +347,7 @@ function woocommerce_virtualmerchant_init() {
 			// Send request to virtualmerchant
 			$url = $this->liveurl;
 
-			//Determine if testmode is enabled and set the URL accordingly
+			// Determine if testmode is enabled and set the URL accordingly
 			if ( $this->testmode == 'yes' ) {
 				$url = $this->testurl;
 			}
@@ -371,7 +365,8 @@ function woocommerce_virtualmerchant_init() {
 					'ssl_amount'				=> $order->order_total,
 					'ssl_cvv2cvc2_indicator'	=> '1',
 					'ssl_cvv2cvc2'				=> $card_csc,
-					'ssl_transaction_currency'  => $card_currency,
+					//'ssl_transaction_currency'  => $order->get_order_currency(),
+					'ssl_transaction_currency'	=> $card_currency,
 					'ssl_avs_zip'				=> $order->billing_postcode,
 					'ssl_invoice_number'		=> $order_id,
 					'ssl_avs_address'			=> $order->billing_address_1,
@@ -392,7 +387,6 @@ function woocommerce_virtualmerchant_init() {
 			
 			// For testing
 			// $woocommerce->add_error(__( 'Payment Error', 'woothemes' ) . ': ' . $post_data . '');
-
 			try{
 				//execute wp_remote_post
 				$result = wp_remote_post( $url, array (
@@ -423,7 +417,7 @@ function woocommerce_virtualmerchant_init() {
 			} else {
 				$transactionid = '';
 			}
-			
+		
 			/**
 			 *Check for Valid CVV in the wp_remote_post results
 			 */
@@ -441,7 +435,7 @@ function woocommerce_virtualmerchant_init() {
 					return true;
 				}
 			}
-
+			
 			//determine if the transaction was successful
 			if ( isset( $output['ssl_result'] ) && ( $output['ssl_result'] == 0 ) && cvv_check( $output['ssl_cvv2_response'], $cvv_enabled ) ) {
 
@@ -472,6 +466,7 @@ function woocommerce_virtualmerchant_init() {
 				$order->update_status( 'Failed',__( 'Payment method was declined.', 'woothemes' ) );
 				$woocommerce->add_error(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '');
 			}
+			
 		}
 
 		/**
