@@ -382,7 +382,10 @@ function woocommerce_virtualmerchant_init() {
 			}
 
 			rtrim( $post_data, "&" );
-
+			
+			// For testing
+			$woocommerce->add_error(__( 'Payment Error', 'woothemes' ) . ': ' . $post_data . '');
+			/*Commented out for testing
 			try{
 				//execute wp_remote_post
 				$result = wp_remote_post( $url, array (
@@ -413,7 +416,7 @@ function woocommerce_virtualmerchant_init() {
 			} else {
 				$transactionid = '';
 			}
-
+			*/
 			/**
 			 *Check for Valid CVV in the wp_remote_post results
 			 */
@@ -431,7 +434,7 @@ function woocommerce_virtualmerchant_init() {
 					return true;
 				}
 			}
-
+			/*Commented out for testing
 			//determine if the transaction was successful
 			if ( isset( $output['ssl_result'] ) && ( $output['ssl_result'] == 0 ) && cvv_check( $output['ssl_cvv2_response'], $cvv_enabled ) ) {
 
@@ -462,6 +465,7 @@ function woocommerce_virtualmerchant_init() {
 				$order->update_status( 'Failed',__( 'Payment method was declined.', 'woothemes' ) );
 				$woocommerce->add_error(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '');
 			}
+			*/
 		}
 
 		/**
