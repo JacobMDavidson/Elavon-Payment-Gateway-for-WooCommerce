@@ -387,6 +387,8 @@ function woocommerce_virtualmerchant_init() {
 			
 			// For testing
 			// $woocommerce->add_error(__( 'Payment Error', 'woothemes' ) . ': ' . $post_data . '');
+
+			
 			try{
 				//execute wp_remote_post
 				$result = wp_remote_post( $url, array (
@@ -417,6 +419,7 @@ function woocommerce_virtualmerchant_init() {
 			} else {
 				$transactionid = '';
 			}
+			
 		
 			/**
 			 *Check for Valid CVV in the wp_remote_post results
@@ -438,9 +441,11 @@ function woocommerce_virtualmerchant_init() {
 			
 			//determine if the transaction was successful
 			if ( isset( $output['ssl_result'] ) && ( $output['ssl_result'] == 0 ) && cvv_check( $output['ssl_cvv2_response'], $cvv_enabled ) ) {
-
+			
 				//add transaction id to payment complete message, update woocommerce order and cart
-				$order->add_order_note( __( 'VirtualMerchant payment completed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . ')' );
+				$order->add_order_note( __( 'VirtualMerchant payment completed<br />(Currency: '. 
+						$card_currency . ')<br />(Transaction ID: '. 
+						$transactionid . ')' , 'woothemes' ) );
 				$order->payment_complete();
 				$woocommerce->cart->empty_cart();
 			
@@ -450,6 +455,7 @@ function woocommerce_virtualmerchant_init() {
 					'redirect' => add_query_arg( 'key', $order->order_key, add_query_arg( 'order', $order_id, get_permalink( get_option( 'woocommerce_thanks_page_id' ) ) ) )
 				);
 			} else {
+			
 
 				if( isset( $output['ssl_result'] ) && cvv_check( $output['ssl_cvv2_response'], $cvv_enabled ) ) {
 					$responsemessage = 'Payment was declined for the following reason: '. $output['ssl_result_message'] . '. Try again, or select a different card.';
