@@ -1,23 +1,2 @@
 2012.08.24 - Version 1.0.0
 *First Release
-
-2013.04.18 - Version 1.0.1
-*added save admin options for WooCommerce version 2+
-
-2014.01.12 - Version 1.0.2
-*added support for business credit cards / purchases cards
-*removed currency restriction
-*added currency warning in admin settings warning user that Virtual Merchant account currency must match the current setting of WooCommerce
-*added ability to enable/disable business card support in settings
-*updated front end payment form formatting 
-
-2014.02.12 - Version 1.0.3
-*added virtual merchant sales tax support
-
-2014.03.04 - Version 1.0.4
-*updated for compatibility with WooCommerce 2.1
-
-2014.12.03 - Version 1.05
-*added AVS authorization
-*payment process is now separated into 2 steps. The first step checks AVS and CVV, and the second step processes the payment if the first step passes.
-*Compiled the admin credit card selection into one multi option box.
