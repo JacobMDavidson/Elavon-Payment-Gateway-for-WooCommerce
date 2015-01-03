@@ -1,2 +1,5 @@
 2012.08.24 - Version 1.0.0
 *First Release
+
+2013.04.18 - Version 1.0.1
+*added save admin options for WooCommerce version 2+
