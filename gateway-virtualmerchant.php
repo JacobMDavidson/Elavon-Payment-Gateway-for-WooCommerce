@@ -399,7 +399,7 @@ function woocommerce_virtualmerchant_init() {
 			if ( ! $this->validate_settings() ) {
 				$cancelNote = __('Order was cancelled due to invalid settings (check your credentials).', 'woothemes');
 				$order->add_order_note( $cancelNote );
-				wc_print_notice(__('Payment was rejected due to configuration error.', 'woothemes'), $notice_type = 'error');
+				wc_add_notice(__('Payment was rejected due to configuration error.', 'woothemes'), $notice_type = 'error');
 				return false;
 			}
 
@@ -452,7 +452,7 @@ function woocommerce_virtualmerchant_init() {
 			/*
 			//For testing purposes
 			$responsemessage = $post_data;
-			wc_print_notice(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '', $notice_type = 'error');
+			wc_add_notice(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '', $notice_type = 'error');
 			*/
 			
 			try{
@@ -475,7 +475,7 @@ function woocommerce_virtualmerchant_init() {
 
 			//Catch any errors caused by wp_remote_post
 			catch( Exception $e ) {
-				wc_print_notice(__( 'There was a connection error', 'woothemes' ) . ': "' . $e->getMessage() . '"', $notice_type = 'error' );
+				wc_add_notice(__( 'There was a connection error', 'woothemes' ) . ': "' . $e->getMessage() . '"', $notice_type = 'error' );
 				return;
 			}
 
@@ -533,7 +533,7 @@ function woocommerce_virtualmerchant_init() {
 				$cancelNote = __( 'VirtualMerchant payment failed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . '). ' . __( 'Payment was rejected due to an error', 'woothemes' ) . ': "' . $responsemessage . '". ';
 				$order->add_order_note( $cancelNote );
 				$order->update_status( 'Failed',__( 'Payment method was declined.', 'woothemes' ) );
-				wc_print_notice(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '', $notice_type = 'error');
+				wc_add_notice(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '', $notice_type = 'error');
 			}
 		}
 
@@ -552,12 +552,12 @@ function woocommerce_virtualmerchant_init() {
 
 			// Determine if provided card security code contains numbers and is the proper length
 			if ( ! ctype_digit( $card_csc ) ) {
-				wc_print_notice(__( 'Card security code is invalid (only digits are allowed)', 'woothemes' ), $notice_type = 'error' );
+				wc_add_notice(__( 'Card security code is invalid (only digits are allowed)', 'woothemes' ), $notice_type = 'error' );
 				return false;
 			}
 
 			if ( ( strlen( $card_csc ) != 3 && in_array( $card_type, array('Visa', 'MasterCard', 'Discover') ) ) || ( strlen( $card_csc ) != 4 && $card_type == 'American Express' ) ) {
-				wc_print_notice(__( 'Card security code is invalid (wrong length)', 'woothemes' ), $notice_type = 'error' );
+				wc_add_notice(__( 'Card security code is invalid (wrong length)', 'woothemes' ), $notice_type = 'error' );
 				return false;
 			}
 
@@ -569,14 +569,14 @@ function woocommerce_virtualmerchant_init() {
 				$card_exp_year < date('Y') ||
 				$card_exp_year > date('Y') + 20
 			) {
-				wc_print_notice(__( 'Card expiration date is invalid', 'woothemes' ), $notice_type = 'error' );
+				wc_add_notice(__( 'Card expiration date is invalid', 'woothemes' ), $notice_type = 'error' );
 				return false;
 			}
 
 			// Determine if a number was provided for the credit card number
 			$card_number = str_replace( array( ' ', '-' ), '', $card_number );
 			if( empty( $card_number ) || ! ctype_digit( $card_number ) ) {
-				wc_print_notice(__( 'Card number is invalid', 'woothemes' ), $notice_type = 'error' );
+				wc_add_notice(__( 'Card number is invalid', 'woothemes' ), $notice_type = 'error' );
 				return false;
 			}
 
