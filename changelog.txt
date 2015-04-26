@@ -18,6 +18,9 @@
 *updated for compatibility with WooCommerce 2.1
 
 2014.12.03 - Version 1.05
+*updated for compatibility with WooCommerce 2.3+
+
+2014.04.26 - Version 1.05
 *added AVS authorization
 *payment process is now separated into 2 steps. The first step checks AVS and CVV, and the second step processes the payment if the first step passes.
 *Compiled the admin credit card selection into one multi option box.
