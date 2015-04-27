@@ -2,7 +2,7 @@
 /*
 Plugin Name: WooCommerce Virtual Merchant Gateway
 Description: Virtual Merchant/Elavon payment gateway plugin for WooCommerce. A Virtual Merchant account through Elavon, and a server with SSL support and an SSL certificate is required (for security reasons) for this gateway to function. This gateway is configured for US purchases in US Dollars only.
-Version: 1.0.4
+Version: 1.0.6
 Author: Jacob Davidson
 Author URI: http://jacobmdavidson.wordpress.com//
 */
@@ -42,6 +42,7 @@ function woocommerce_virtualmerchant_init() {
 			$this->id 				= 'virtualmerchant';
 			$this->method_title		= __('VirtualMerchant', 'woothemes');
 			$this->has_fields 		= true;
+			$this->supports[]		= 'default_credit_card_form';
 
 			// Load the form fields
 			$this->init_form_fields();
@@ -59,8 +60,6 @@ function woocommerce_virtualmerchant_init() {
 			$this->testmode 				= $this->settings['testmode'];
 			$this->cvv_enabled				= $this->settings['cvv_enabled'];
 			$this->avs_options				= $this->settings['avs_options'];
-			$this->business_enabled			= $this->settings['business_enabled'];
-			$this->credit_card_options		= $this->settings['credit_card_options'];
 		
 			// SSL check hook used on admin options to determine if SSL is enabled
 			add_action( 'admin_notices', array( &$this, 'ssl_check' ) );
@@ -130,25 +129,6 @@ function woocommerce_virtualmerchant_init() {
 								'description' => __( 'pin provided by VirtualMerchant.', 'woothemes' ), 
 								'default' => ''
 							),
-				'business_enabled' => array(
-								'title' => __( 'Enable Business Cards', 'woothemes' ), 
-								'label' => __( 'Enable the Use of Business Cards / Purchasing Cards', 'woothemes' ), 
-								'type' => 'checkbox',
-								'default' => 'yes'
-							),	
-				'credit_card_options' => array(
-								'title' => __( 'Accepted Credit Cards', 'woothemes' ), 
-								'description' => __( 'Select all accepted credit cards. Hold down Command or Control to make multiple 
-								 selections or to deselect an item. If none are selected, all credit cards will be accepted', 'woothemes' ), 
-     							'type' => 'multiselect',
-     							'options' => array(
-     									'Visa' => 'Visa',
-     									'Mastercard' => 'MasterCard',
-     									'American Express' => 'American Express',
-     									'Discover' => 'Discover',
-     								)
-     						),	
-				
 				'cvv_enabled' => array(
 								'title' => __( 'Enable CSC Authentication', 'woothemes' ), 
 								'label' => __( 'Enable CSC Authentication', 'woothemes' ), 
@@ -158,24 +138,16 @@ function woocommerce_virtualmerchant_init() {
 							),	
 				'avs_options' => array(
 								'title' => __( 'Enable AVS Authentication', 'woothemes' ), 
-								'description' => __( 'Select all options that you deem acceptable for the AVS check. Hold down Command or Control to make multiple 
-								 selections or to deselect an item. If none are selected, AVS will not be checked. For example, if you prefer to accept cards with a 
-								 matching 5 digit zip code, select "Exact AVS Match", "Address (Street) and 5-digit ZIP match", "9-digit ZIP matches, Address 
-								 (Street) does not match", and "5-Digit ZIP matches, Address (Street) does not match".', 'woothemes' ), 
-     							'type' => 'multiselect',
-     							'default' => 'A',
+								'description' => __( 'AVS Authentication Level', 'woothemes' ), 
+     							'type' => 'select',
+     							'default' => 'None',
      							'options' => array(
-     									'X' => 'Exact AVS Match',
-     									'Y' => 'Address (Street) and 5-digit ZIP match',
-     									'W' => '9-digit ZIP matches, Address (Street) does not match',
-     									'Z' => '5-Digit ZIP matches, Address (Street) does not match',
-     									'A' => 'Address matches - ZIP code does not match',
-     									'F' => 'Address does compare and five-digit ZIP code does compare (UK only)',
-     									'D' => 'Street address and postal code match (international issuer)',
-     									//'M' => 'Street Address and Postal code match (international issuer)',
-     									'P' => 'Postal codes match, street address not verified due to incompatible formats (international user)',
-     									'B' => 'Street address match, postal code in wrong format (international issuer)',
-     								) // array of options for select/multiselects only
+     									'none' => 'Disable AVS Verification',
+     									'address_or_zip' => 'Low - Either Address or Zip Match',
+     									'zip' => 'Medium - Zip Must Match',
+     									'address' => 'Medium - Address Must Match',
+     									'strict' => 'Strict - Both Address and Zip Must Match'
+     								) 
      						)			
 				);
 		}
@@ -242,135 +214,17 @@ function woocommerce_virtualmerchant_init() {
 				echo __('Select a country to see the payment form', 'woothemes');
 				return;
 			}
-
-			//Build the array of available cards
-			$available_cards = $this->credit_card_options;
 			
-			// If the available cards array is empty, add all cards
-			if ( !$available_cards ){
-				$available_cards[] = 'Visa';
-				$available_cards[] = 'MasterCard';
-				$available_cards[] = 'American Express';
-				$available_cards[] = 'Discover';
+			$description = $this->get_description();
+			if ( 'yes' == $this->testmode ) {
+				$description .= ' TEST MODE ENABLED.';
 			}
+			
+			if ( $description ) {
+				echo wpautop( wptexturize( trim( $description ) ) );
+			}
+			$this->credit_card_form();
 
-			?>
-			<?php if ( $this->testmode == 'yes' ) : ?>
-				<p><?php _e( 'TEST MODE/SANDBOX ENABLED', 'woothemes' ); ?></p>
-			<?php endif; ?>
-
-			<?php if ( $this->description ) : ?>
-				<p><?php echo $this->description; ?></p>
-			<?php endif; ?>
-
-			<fieldset>
-				<?php 
-				// If business cards are enabled, display the personal/business card selection form
-				if ( $this->business_enabled == 'yes' ) { ?>
-					<p class="form-row form-row-first" style="text-align: right">
-						<label for="virtualmerchant_personal_business"><?php echo __( 'Select Personal or Business Card', 'woocommerce' ) ?> <span class="required" style="display: inline;">*</span></label>
-					</p>
-					<p class="form-row form-row-last" style="text-align: left">	
-						<select id="virtualmerchant_personal_business" style="width: 100%" name="virtualmerchant_personal_business" onChange="businessCard(this.options[this.selectedIndex].value)">
-							<option value="Personal" selected = "selected">Personal Credit Card</option>
-							<option value="Business">Business Credit Card</option>
-						</select>
-					</p>
-					<div class="clear"></div>
-				<?php } ?>
-				
-				<p class="form-row form-row-first" style="text-align: right">
-					<label for="virtualmerchant_card_number"><?php echo __( 'Credit Card number', 'woocommerce' ) ?> <span class="required" style="display: inline;">*</span></label>
-				</p>
-				<p class="form-row form-row-last" style="text-align: left">
-					<input type="text" class="input-text" name="virtualmerchant_card_number" maxlength="19"/>
-				</p>
-				
-				<div class="clear"></div>
-				<p class="form-row form-row-first" style="text-align: right">
-					<label for="virtualmerchant_card_type"><?php echo __( 'Card type', 'woocommerce' ) ?> <span class="required" style="display: inline;">*</span></label>
-				</p>
-				<p class="form-row form-row-last" style="text-align: left">	
-					<select id="virtualmerchant_card_type" style="width: 100%" name="virtualmerchant_card_type" onChange="doIt(this.options[this.selectedIndex].value)">
-						<?php foreach ( $available_cards as $card ) : ?>
-							<option value="<?php echo $card ?>"><?php echo $card; ?></option>
-						<?php endforeach; ?>
-					</select>
-				</p>
-				
-				<div class="clear"></div>
-				<p class="form-row form-row-first" style="text-align: right">
-					<label for="cc-expire-month"><?php echo __( 'Expiration date', 'woocommerce' ) ?> <span class="required" style="display: inline;">*</span></label>
-				</p>
-				<p class="form-row form-row-last" style="text-align: left">	
-					<select name="virtualmerchant_card_expiration_month" style="width: 48%" id="cc-expire-month">
-						<option value=""><?php _e( 'Month', 'woocommerce' ) ?></option>
-						<?php
-							$months = array();
-							for ( $i = 1; $i <= 12; $i++ ) {
-								$timestamp = mktime( 0, 0, 0, $i, 1 );
-								$months[ date( 'm', $timestamp ) ] = date( 'F', $timestamp );
-							}
-							foreach ( $months as $num => $name ) {
-								printf( '<option value="%s">%s</option>', $num, $name );
-							}
-						?>
-					</select>
-					<select name="virtualmerchant_card_expiration_year" style="width: 48%; margin-right: 0;" id="cc-expire-year">
-						<option value=""><?php _e( 'Year', 'woocommerce' ) ?></option>
-						<?php
-							$years = array();
-							for ( $i = date( 'Y' ); $i <= date( 'Y' ) + 15; $i++ ) {
-								printf( '<option value="%u">%u</option>', $i, $i );
-							}
-						?>
-					</select>
-				</p>
-				
-				<div class="clear"></div>
-				<p class="form-row form-row-first" style="text-align: right">
-					<label for="virtualmerchant_card_csc"><?php _e( 'Card security code', 'woocommerce' ) ?> <span class="required" style="display: inline;">*</span></label>
-				</p>
-				<p class="form-row form-row-last" style="text-align: left">
-						<input type="text" class="input-text" id="virtualmerchant_card_csc" name="virtualmerchant_card_csc" maxlength="4" style="width:45px; margin: 0 0 0 0;" />
-						
-						<span id="virtualmerchant_card_csc_description" style="font-size: small">3 digits on back of card.</span>
-				</p>
-				
-				<div class="clear"></div>
-				<div id="div1" style="display: none">
-				<p class="form-row form-row-first" style="text-align: right">
-					<label for="virtualmerchant_customer_code"><?php echo __( 'Customer Code / PO Number', 'woocommerce' ) ?> <span class="required" style="display: inline;">*</span></label>
-				</p>
-				<p class="form-row form-row-last" style="text-align: left">
-					<input type="text" class="input-text" name="virtualmerchant_customer_code" maxlength="17"/>
-				</p>
-				</div>
-			</fieldset>
-
-			<script type="text/javascript">
-
-				/**
-				 * Display credit card security code location message based on credit card type
-				 */
-				function doIt(objval){
-					var cscmessage = objval;
-					if (cscmessage == 'American Express'){
-						document.getElementById('virtualmerchant_card_csc_description').firstChild.nodeValue='4 digits on front of card.';
-					} else {
-						document.getElementById('virtualmerchant_card_csc_description').firstChild.nodeValue='3 digits on back of card.';
-					}
-				}
-				function businessCard(objval){
-					var cardtype = objval;
-					var vis = "none";
-					if (cardtype == 'Business'){
-						vis = "block";
-					} 
-					document.getElementById('div1').style.display = vis;
-				}
-			</script>
-			<?php
 		}
 
 		/**
@@ -380,24 +234,9 @@ function woocommerce_virtualmerchant_init() {
 
 			global $woocommerce;
 			$order = new WC_Order( $order_id );
-			$billing_country	= isset( $_POST['billing-country'] ) ? $_POST['billing-country'] : '';
-			$card_type			= isset( $_POST['virtualmerchant_card_type'] ) ? $_POST['virtualmerchant_card_type'] : '';
-			$card_number		= isset( $_POST['virtualmerchant_card_number'] ) ? $_POST['virtualmerchant_card_number'] : '';
-			$card_csc			= isset( $_POST['virtualmerchant_card_csc'] ) ? $_POST['virtualmerchant_card_csc'] : '';
-			$card_exp_month		= isset( $_POST['virtualmerchant_card_expiration_month'] ) ? $_POST['virtualmerchant_card_expiration_month'] : '';
-			$card_exp_year		= isset( $_POST['virtualmerchant_card_expiration_year'] ) ? $_POST['virtualmerchant_card_expiration_year'] : '';
-			$card_personal_business = isset( $_POST['virtualmerchant_personal_business'] ) ? $_POST['virtualmerchant_personal_business'] : '';
-			
-			//If this is a business card, get the customer code
-			if ( $card_personal_business == 'Business' ) {
-				$customer_code = isset( $_POST['virtualmerchant_customer_code'] ) ? $_POST['virtualmerchant_customer_code'] : '';
-			}
-
-			//Format and combine credit card month and year
-			$card_expiration = $card_exp_month . substr( $card_exp_year, -2 );
-
-			// Format credit card number
-			$card_number = str_replace( array( ' ', '-' ), '', $card_number );
+			$card_number		= str_replace( array(' ', '-'), '', $_POST['virtualmerchant-card-number']);
+			$card_csc			= isset( $_POST['virtualmerchant-card-cvc'] ) ? $_POST['virtualmerchant-card-cvc'] : '';
+			$card_expiration	= str_replace( array( '/', ' '), '', $_POST['virtualmerchant-card-expiry'] );
 
 			// Validate plugin settings
 			if ( ! $this->validate_settings() ) {
@@ -418,9 +257,6 @@ function woocommerce_virtualmerchant_init() {
 			$cvv_enabled = $this->cvv_enabled;
 			
 			$avs_options = $this->avs_options;
-			
-			$authorization_data = '';
-			$post_data = '';
 			
 			$authorization = array(
 					'ssl_merchant_id'			=> $this->merchant_id,
@@ -459,41 +295,23 @@ function woocommerce_virtualmerchant_init() {
 					'ssl_result_format'			=> 'ascii',
 					'ssl_test_mode' 			=>'false',
 				);
-
-			//If this is a business card add the customer code to the array
-			if ( $card_personal_business == 'Business' ) {
-				$fields['ssl_customer_code'] = $customer_code;
-			}			
-			
-			
-			//build and format the autorization string
-			foreach ( $authorization as $key=>$value ) {
-				$authorization_data .=$key. '=' .$value. '&'; 
-			}
-			
-			$authorization_data = rtrim( $authorization_data, "&" ); 
-			
-			//build and format the post string
-			foreach ( $fields as $key=>$value ) { 
-				$post_data .=$key. '=' .$value. '&'; 
-			}
-			
-			$post_data = rtrim( $post_data, "&" );
 									
 			// Verify the transaction (CVV and AVS checks)
 			try{
 				//execute wp_remote_post
 				$authorization_result = wp_remote_post( $url, array (
 						'method'	=> 'POST',
-						'timeout'	=> 30,
+						'timeout'	=> 90,
 						'sslverify'	=> false,
-						'body'		=> $authorization_data
+						'body'		=> http_build_query($authorization)
 					)
 				);
 
 				//Check for wp_remote_post errors
-				if ( is_wp_error( $result ) ) throw new Exception( 'There was an error during authorization' );
-				if ( empty( $authorization_result['body'] ) ) throw new Exception( 'Empty VirtualMerchant Output during authorization.' );
+				if ( is_wp_error( $authorization_result ) ) 
+					throw new Exception( 'There was an error during authorization' );
+				if ( empty( $authorization_result['body'] ) ) 
+					throw new Exception( 'Empty VirtualMerchant Output during authorization.' );
 
 				//parse the resulting array
 				parse_str( str_replace( array( "\n", "\r" ), '&', $authorization_result['body'] ), $authorization_output );
@@ -534,9 +352,18 @@ function woocommerce_virtualmerchant_init() {
 			 */
 			function avs_check( $avs_response, $avs_options ) {
 			
-				if ( $avs_options) {
+				if ( $avs_options != "none" ) {
+					if( $avs_options == "strict") {
+						$compare_array = array("X", "Y", "F", "D", "M");		
+					} else if ( $avs_options == "address") {
+						$compare_array = array("X", "Y", "F", "D", "M", "A", "B");
+					} else if ( $avs_options == "zip") {
+						$compare_array = array("X", "Y", "F", "D", "M", "W", "Z", "P");
+					} else {
+						$compare_array = array("X", "Y", "F", "D", "M", "A", "B", "W", "Z", "P");
+					}
 
-					if( in_array($avs_response, $avs_options) ) {
+					if( in_array($avs_response, $compare_array) ) {
 						return true;
 					} else {
 						return false;
@@ -548,8 +375,7 @@ function woocommerce_virtualmerchant_init() {
 			}
 
 			//determine if the authorization was successful
-			if ( isset( $authorization_output['ssl_result'] ) && ( $authorization_output['ssl_result'] == 0 ) && 
-				cvv_check( $authorization_output['ssl_cvv2_response'], $cvv_enabled )  && 
+			if ( cvv_check( $authorization_output['ssl_cvv2_response'], $cvv_enabled )  && 
 				avs_check( $authorization_output['ssl_avs_response'], $avs_options ) ) {
 				
 				//Execute the actual payment
@@ -558,9 +384,9 @@ function woocommerce_virtualmerchant_init() {
 					//execute wp_remote_post
 					$result = wp_remote_post( $url, array (
 							'method'	=> 'POST',
-							'timeout'	=> 30,
+							'timeout'	=> 90,
 							'sslverify'	=> false,
-							'body'		=> $post_data
+							'body'		=> http_build_query( $fields )
 						)
 					);
 
@@ -578,7 +404,6 @@ function woocommerce_virtualmerchant_init() {
 				//Catch any errors caused by wp_remote_post
 				catch( Exception $e ) {
 					
-					//@ TODO replace with wc_add_notice
 					wc_add_notice(__( 'There was a connection error', 'woothemes' ) . ': "' . $e->getMessage() . '"', $notice_type = 'error' );
 					return;
 				}
@@ -650,51 +475,6 @@ function woocommerce_virtualmerchant_init() {
 			}
 		}
 
-		/**
-		 * Validate the payment form prior to submitting via wp_remote_posts
-		 */
-		function validate_fields() {
-
-			global $woocommerce;
-			$billing_country 	= isset( $_POST['billing_country'] ) ? $_POST['billing_country'] : '';
-			$card_type			= isset( $_POST['virtualmerchant_card_type'] ) ? $_POST['virtualmerchant_card_type'] : '';
-			$card_number		= isset( $_POST['virtualmerchant_card_number'] ) ? $_POST['virtualmerchant_card_number'] : '';
-			$card_csc			= isset( $_POST['virtualmerchant_card_csc'] ) ? $_POST['virtualmerchant_card_csc'] : '';
-			$card_exp_month		= isset( $_POST['virtualmerchant_card_expiration_month'] ) ? $_POST['virtualmerchant_card_expiration_month'] : '';
-			$card_exp_year		= isset( $_POST['virtualmerchant_card_expiration_year'] ) ? $_POST['virtualmerchant_card_expiration_year'] : '';
-
-			// Determine if provided card security code contains numbers and is the proper length
-			if ( ! ctype_digit( $card_csc ) ) {
-				wc_add_notice(__( 'Card security code is invalid (only digits are allowed)', 'woothemes' ), $notice_type = 'error' );
-				return false;
-			}
-
-			if ( ( strlen( $card_csc ) != 3 && in_array( $card_type, array('Visa', 'MasterCard', 'Discover') ) ) || ( strlen( $card_csc ) != 4 && $card_type == 'American Express' ) ) {
-				wc_add_notice(__( 'Card security code is invalid (wrong length)', 'woothemes' ), $notice_type = 'error' );
-				return false;
-			}
-
-			// Check card expiration date
-			if ( ! ctype_digit( $card_exp_month ) || 
-				! ctype_digit( $card_exp_year ) ||
-				$card_exp_month > 12 ||
-				$card_exp_month < 1 ||
-				$card_exp_year < date('Y') ||
-				$card_exp_year > date('Y') + 20
-			) {
-				wc_add_notice(__( 'Card expiration date is invalid', 'woothemes' ), $notice_type = 'error' );
-				return false;
-			}
-
-			// Determine if a number was provided for the credit card number
-			$card_number = str_replace( array( ' ', '-' ), '', $card_number );
-			if( empty( $card_number ) || ! ctype_digit( $card_number ) ) {
-				wc_add_notice(__( 'Card number is invalid', 'woothemes' ), $notice_type = 'error' );
-				return false;
-			}
-
-			return true;
-		}
 
 		/**
 		 * Validate plugin settings
