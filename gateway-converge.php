@@ -1,15 +1,15 @@
 <?php
 /*
-Plugin Name: WooCommerce Virtual Merchant Gateway
-Description: Virtual Merchant/Elavon payment gateway plugin for WooCommerce. A Virtual Merchant account through Elavon, and a server with SSL support and an SSL certificate is required (for security reasons) for this gateway to function. This gateway is configured for US purchases in US Dollars only.
-Version: 1.0.6
+Plugin Name: Converge Gateway for WooCommerce
+Description: Elavon's Converge payment gateway plugin for WooCommerce. A Converge account through Elavon, and a server with SSL support and an SSL certificate is required (for security reasons) for this gateway to function.
+Version: 2.0.0
 Author: Jacob Davidson
-Author URI: http://jacobmdavidson.wordpress.com//
+Author URI: http://www.jacobmdavidson.com/
 */
 
-add_action( 'plugins_loaded', 'woocommerce_virtualmerchant_init', 0 );
+add_action( 'plugins_loaded', 'woocommerce_converge_init', 0 );
 
-function woocommerce_virtualmerchant_init() {
+function woocommerce_converge_init() {
 
 	if ( ! class_exists( 'WC_Payment_Gateway' ) ) { 
 		return; 
@@ -18,7 +18,7 @@ function woocommerce_virtualmerchant_init() {
 	/**
 	 * Gateway Class
 	 */
-	class WC_Gateway_Virtualmerchant extends WC_Payment_Gateway {
+	class WC_Gateway_Converge extends WC_Payment_Gateway {
 
 		/**
 		 *Define Virtual Merchant Variables
@@ -39,8 +39,8 @@ function woocommerce_virtualmerchant_init() {
 		 */
 		function __construct() { 
 
-			$this->id 				= 'virtualmerchant';
-			$this->method_title		= __('VirtualMerchant', 'woothemes');
+			$this->id 				= 'converge';
+			$this->method_title		= __('Converge', 'woothemes');
 			$this->has_fields 		= true;
 			$this->supports[]		= 'default_credit_card_form';
 
@@ -75,7 +75,7 @@ function woocommerce_virtualmerchant_init() {
 	 	function ssl_check() {
 
 			if ( get_option( 'woocommerce_force_ssl_checkout' ) == 'no' && $this->enabled == 'yes' ) {
-				echo '<div class="error"><p>'.sprintf(__('VirtualMerchant is enabled, but the <a href="%s">force SSL option</a> is disabled; your checkout is not secure! Please enable SSL and ensure your server has a valid SSL certificate - VirtualMerchant will only work in test mode.', 'woothemes'), admin_url('admin.php?page=woocommerce')).'</p></div>';
+				echo '<div class="error"><p>'.sprintf(__('Converge is enabled, but the <a href="%s">force SSL option</a> is disabled; your checkout is not secure! Please enable SSL and ensure your server has a valid SSL certificate - Converge will only work in test mode.', 'woothemes'), admin_url('admin.php?page=woocommerce')).'</p></div>';
 			}
 		}
 
@@ -93,7 +93,7 @@ function woocommerce_virtualmerchant_init() {
 							), 
 				'enabled' => array(
 								'title' => __( 'Enable/Disable', 'woothemes' ), 
-								'label' => __( 'Enable VirtualMerchant', 'woothemes' ), 
+								'label' => __( 'Enable Converge', 'woothemes' ), 
 								'type' => 'checkbox', 
 								'description' => '', 
 								'default' => 'no'
@@ -105,35 +105,35 @@ function woocommerce_virtualmerchant_init() {
 								'default' => 'Pay with your credit card or debit card.'
 							),  
 				'testmode' => array(
-								'title' => __( 'VirtualMerchant Test', 'woothemes' ), 
-								'label' => __( 'Enable VirtualMerchant Test', 'woothemes' ), 
+								'title' => __( 'Converge Test', 'woothemes' ), 
+								'label' => __( 'Enable Converge Test', 'woothemes' ), 
 								'type' => 'checkbox', 
-								'description' => __( 'Process transactions in Test Mode via the VirtualMerchant Test account (demo.myvirtualmerchant.com). Contact Virtual Merchant at 1-800-377-3962 to request a unique test account', 'woothemes' ), 
+								'description' => __( 'Process transactions in Test Mode via the Converge Test account (demo.myvirtualmerchant.com). Contact Virtual Merchant at 1-800-377-3962 to request a unique test account', 'woothemes' ), 
 								'default' => 'no'
 							), 
 				'merchant_id' => array(
 								'title' => __( 'Merchant ID', 'woothemes' ), 
 								'type' => 'text', 
-								'description' => __( 'Merchant ID provided by VirtualMerchant.', 'woothemes' ), 
+								'description' => __( 'Merchant ID provided by Converge.', 'woothemes' ), 
 								'default' => ''
 							), 
 				'user_id' => array(
 								'title' => __( 'User ID', 'woothemes' ), 
 								'type' => 'text', 
-								'description' => __( 'User ID provided by VirtualMerchant.', 'woothemes' ), 
+								'description' => __( 'User ID provided by Converge.', 'woothemes' ), 
 								'default' => ''
 							),
 				'pin' => array(
 								'title' => __( 'pin', 'woothemes' ), 
 								'type' => 'text', 
-								'description' => __( 'pin provided by VirtualMerchant.', 'woothemes' ), 
+								'description' => __( 'pin provided by Converge.', 'woothemes' ), 
 								'default' => ''
 							),
 				'cvv_enabled' => array(
 								'title' => __( 'Enable CSC Authentication', 'woothemes' ), 
 								'label' => __( 'Enable CSC Authentication', 'woothemes' ), 
 								'type' => 'checkbox', 
-								//'description' => __( 'This option must also be enabled on your VirtualMerchant account as a Post-Processing Rule under Business Rules. Contact VirtualMerchant if you have any questions.', 'woothemes' ), 
+								//'description' => __( 'This option must also be enabled on your Converge account as a Post-Processing Rule under Business Rules. Contact Converge if you have any questions.', 'woothemes' ), 
 								'default' => 'no'
 							),	
 				'avs_options' => array(
@@ -158,9 +158,9 @@ function woocommerce_virtualmerchant_init() {
 		function admin_options() {
 		
 			?>
-			<h3><?php _e( 'VirtualMerchant', 'woothemes' ); ?></h3>
+			<h3><?php _e( 'Converge', 'woothemes' ); ?></h3>
 			<p>	
-				<?php _e( 'VirtualMerchant works by adding credit card fields on the checkout and then sending the details to VirtualMerchant for verification.', 'woothemes' ); ?><br />
+				<?php _e( 'Converge works by adding credit card fields on the checkout and then sending the details to Converge for verification.', 'woothemes' ); ?><br />
 				<?php _e( "<strong><u>WARNING:</u></strong> WooCommerce is currently set to use '" . get_woocommerce_currency() . "' currency.", 'woothemes'); ?>
 				<?php _e( ' Please make sure your Virtual Merchant account is set to accept this currency.', 'woothemes'); ?>
 			</p>
@@ -223,7 +223,36 @@ function woocommerce_virtualmerchant_init() {
 			if ( $description ) {
 				echo wpautop( wptexturize( trim( $description ) ) );
 			}
-			$this->credit_card_form();
+			
+			// @ TODO Customize credit card form
+			$args = array(
+				'fields_have_names' => true,
+			);
+			 
+			$fields = array(
+				'card-number-field' => '<p class="form-row form-row-wide">
+                	<label for="' . esc_attr( $this->id ) . '-card-number">' . __( 'Card Number', 'woocommerce' ) . ' <span class="required">*</span></label>
+                	<input id="' . esc_attr( $this->id ) . '-card-number" class="input-text wc-credit-card-form-card-number" type="text" maxlength="20" autocomplete="off" placeholder="•••• •••• •••• ••••" name="' . ( $args['fields_have_names'] ? $this->id . '-card-number' : '' ) . '" />
+             	</p>',
+				'card-expiry-field' => '<p class="form-row form-row-first">
+                	<label for="' . esc_attr( $this->id ) . '-card-expiry">' . __( 'Expiry (MM/YY)', 'woocommerce' ) . ' <span class="required">*</span></label>
+                	<input id="' . esc_attr( $this->id ) . '-card-expiry" class="input-text wc-credit-card-form-card-expiry" type="text" autocomplete="off" placeholder="' . __( 'MM / YY', 'woocommerce' ) . '" name="' . ( $args['fields_have_names'] ? $this->id . '-card-expiry' : '' ) . '" />
+             	</p>',
+				'card-cvc-field' => '<p class="form-row form-row-last">
+                	<label for="' . esc_attr( $this->id ) . '-card-cvc">' . __( 'Card Code', 'woocommerce' ) . ' <span class="required">*</span></label>
+                	<input id="' . esc_attr( $this->id ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" type="text" autocomplete="off" placeholder="' . __( 'CVC', 'woocommerce' ) . '" name="' . ( $args['fields_have_names'] ? $this->id . '-card-cvc' : '' ) . '" />
+             	</p>',
+				'card-business-field' => '<p class="form-row form-row-wide">
+                	<label for="' . esc_attr( $this->id ) . '-card-business">' . __( 'Business or Personal Dropdown', 'woocommerce' ) . ' <span class="required">*</span></label>
+            		<select id="' . esc_attr( $this->id ) . '-card-business" class="form-row-first">
+						<option value="credit" selected>Standard Credit Card</option>
+            			<option value="purchasing">Purchasing/Business Card</option>
+				 	</select>
+				</p>'
+			);
+			
+			
+			$this->credit_card_form( $args, $fields);
 
 		}
 
@@ -234,9 +263,9 @@ function woocommerce_virtualmerchant_init() {
 
 			global $woocommerce;
 			$order = new WC_Order( $order_id );
-			$card_number		= str_replace( array(' ', '-'), '', $_POST['virtualmerchant-card-number']);
-			$card_csc			= isset( $_POST['virtualmerchant-card-cvc'] ) ? $_POST['virtualmerchant-card-cvc'] : '';
-			$card_expiration	= str_replace( array( '/', ' '), '', $_POST['virtualmerchant-card-expiry'] );
+			$card_number		= str_replace( array(' ', '-'), '', $_POST['converge-card-number']);
+			$card_csc			= isset( $_POST['converge-card-cvc'] ) ? $_POST['converge-card-cvc'] : '';
+			$card_expiration	= str_replace( array( '/', ' '), '', $_POST['converge-card-expiry'] );
 
 			// Validate plugin settings
 			if ( ! $this->validate_settings() ) {
@@ -246,7 +275,7 @@ function woocommerce_virtualmerchant_init() {
 				return false;
 			}
 
-			// Send request to virtualmerchant
+			// Send request to converge
 			$url = $this->liveurl;
 
 			//Determine if testmode is enabled and set the URL accordingly
@@ -263,7 +292,7 @@ function woocommerce_virtualmerchant_init() {
 					'ssl_user_id'				=> $this->user_id,
 					'ssl_pin'					=> $this->pin,
 					'ssl_show_form'				=> "false",
-					'ssl_transaction_type'		=> "ccverify",
+					'ssl_transaction_type'		=> "ccavsonly",
 					'ssl_card_number'			=> $card_number,
 					'ssl_exp_date'				=> $card_expiration,
 					'ssl_cvv2cvc2'				=> $card_csc,
@@ -311,7 +340,7 @@ function woocommerce_virtualmerchant_init() {
 				if ( is_wp_error( $authorization_result ) ) 
 					throw new Exception( 'There was an error during authorization' );
 				if ( empty( $authorization_result['body'] ) ) 
-					throw new Exception( 'Empty VirtualMerchant Output during authorization.' );
+					throw new Exception( 'Empty Converge Output during authorization.' );
 
 				//parse the resulting array
 				parse_str( str_replace( array( "\n", "\r" ), '&', $authorization_result['body'] ), $authorization_output );
@@ -392,7 +421,7 @@ function woocommerce_virtualmerchant_init() {
 
 					//Check for wp_remote_post errors
 					if ( is_wp_error( $result ) ) throw new Exception( 'There was an error' );
-					if ( empty( $result['body'] ) ) throw new Exception( 'Empty VirtualMerchant Output.' );
+					if ( empty( $result['body'] ) ) throw new Exception( 'Empty Converge Output.' );
 
 					//parse the resulting array
 					parse_str( str_replace( array( "\n", "\r" ), '&', $result['body'] ), $output );
@@ -419,7 +448,7 @@ function woocommerce_virtualmerchant_init() {
 				if ( isset( $output['ssl_result'] ) && ( $output['ssl_result'] == 0 ) ) {
 
 					//add transaction id to payment complete message, update woocommerce order and cart
-					$order->add_order_note( __( 'VirtualMerchant payment completed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . ')' );
+					$order->add_order_note( __( 'Converge payment completed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . ')' );
 					$order->payment_complete();
 					$woocommerce->cart->empty_cart();
 			
@@ -442,7 +471,7 @@ function woocommerce_virtualmerchant_init() {
 					} else {
 						$responsemessage =  "Unidentified Error. Try again, or select a different card.";
 					}
-					$cancelNote = __( 'VirtualMerchant payment failed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . '). ' . __( 'Payment was rejected due to an error', 'woothemes' ) . ': "' . $responsemessage . '". ';
+					$cancelNote = __( 'Converge payment failed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . '). ' . __( 'Payment was rejected due to an error', 'woothemes' ) . ': "' . $responsemessage . '". ';
 					$order->add_order_note( $cancelNote );
 					$order->update_status( 'Failed',__( 'Payment method was declined.', 'woothemes' ) );
 					wc_add_notice(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '', $notice_type = 'error');
@@ -468,7 +497,7 @@ function woocommerce_virtualmerchant_init() {
 				$responsemessage =  "Unidentified Error. Try again, or select a different card.";
 				}
 				
-				$cancelNote = __( 'VirtualMerchant payment failed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . '). ' . __( 'Payment was rejected due to an error', 'woothemes' ) . ': "' . $responsemessage . '". ';
+				$cancelNote = __( 'Converge payment failed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . '). ' . __( 'Payment was rejected due to an error', 'woothemes' ) . ': "' . $responsemessage . '". ';
 				$order->add_order_note( $cancelNote );
 				$order->update_status( 'Failed',__( 'Payment method was declined.', 'woothemes' ) );
 				wc_add_notice(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '', $notice_type = 'error');
@@ -493,10 +522,10 @@ function woocommerce_virtualmerchant_init() {
 	/**
 	 * Add the Virtual Merchant Gateway to WooCommerce
 	 */
-	function add_virtualmerchant_gateway( $methods ) {
-		$methods[] = 'WC_Gateway_virtualmerchant';
+	function add_converge_gateway( $methods ) {
+		$methods[] = 'WC_Gateway_converge';
 		return $methods;
 	}
 
-	add_filter( 'woocommerce_payment_gateways', 'add_virtualmerchant_gateway' );
+	add_filter( 'woocommerce_payment_gateways', 'add_converge_gateway' );
 } 
