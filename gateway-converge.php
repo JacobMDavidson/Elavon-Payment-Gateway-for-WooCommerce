@@ -60,6 +60,7 @@ function woocommerce_converge_init() {
 			$this->testmode 				= $this->settings['testmode'];
 			$this->cvv_enabled				= $this->settings['cvv_enabled'];
 			$this->avs_options				= $this->settings['avs_options'];
+			$this->business_enabled			= $this->settings['business_enabled'];
 		
 			// SSL check hook used on admin options to determine if SSL is enabled
 			add_action( 'admin_notices', array( &$this, 'ssl_check' ) );
@@ -85,19 +86,19 @@ function woocommerce_converge_init() {
 		function init_form_fields() {
 
 			$this->form_fields = array(
+				'enabled' => array(
+							'title' => __( 'Enable/Disable', 'woothemes' ),
+							'label' => __( 'Enable Converge', 'woothemes' ),
+							'type' => 'checkbox',
+							'description' => '',
+							'default' => 'no'
+							),
 				'title' => array(
 								'title' => __( 'Title', 'woothemes' ), 
 								'type' => 'text', 
 								'description' => __( 'This controls the title which the user sees during checkout.', 'woothemes' ), 
 								'default' => __( 'Credit Card / Debit Card', 'woothemes' )
-							), 
-				'enabled' => array(
-								'title' => __( 'Enable/Disable', 'woothemes' ), 
-								'label' => __( 'Enable Converge', 'woothemes' ), 
-								'type' => 'checkbox', 
-								'description' => '', 
-								'default' => 'no'
-							), 			
+							), 		
 				'description' => array(
 								'title' => __( 'Description', 'woothemes' ), 
 								'type' => 'text', 
@@ -129,6 +130,12 @@ function woocommerce_converge_init() {
 								'description' => __( 'pin provided by Converge.', 'woothemes' ), 
 								'default' => ''
 							),
+				'business_enabled' => array(
+							'title' => __( 'Enable Purchasing Cards', 'woothemes' ),
+							'label' => __( 'Enable the Use of Business Cards / Purchasing Cards', 'woothemes' ),
+							'type' => 'checkbox',
+							'default' => 'no'
+							),
 				'cvv_enabled' => array(
 								'title' => __( 'Enable CSC Authentication', 'woothemes' ), 
 								'label' => __( 'Enable CSC Authentication', 'woothemes' ), 
@@ -148,7 +155,8 @@ function woocommerce_converge_init() {
      									'address' => 'Medium - Address Must Match',
      									'strict' => 'Strict - Both Address and Zip Must Match'
      								) 
-     						)			
+     						)
+								
 				);
 		}
 
@@ -241,15 +249,34 @@ function woocommerce_converge_init() {
 				'card-cvc-field' => '<p class="form-row form-row-last">
                 	<label for="' . esc_attr( $this->id ) . '-card-cvc">' . __( 'Card Code', 'woocommerce' ) . ' <span class="required">*</span></label>
                 	<input id="' . esc_attr( $this->id ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" type="text" autocomplete="off" placeholder="' . __( 'CVC', 'woocommerce' ) . '" name="' . ( $args['fields_have_names'] ? $this->id . '-card-cvc' : '' ) . '" />
-             	</p>',
-				'card-business-field' => '<p class="form-row form-row-wide">
-                	<label for="' . esc_attr( $this->id ) . '-card-business">' . __( 'Business or Personal Dropdown', 'woocommerce' ) . ' <span class="required">*</span></label>
-            		<select id="' . esc_attr( $this->id ) . '-card-business" class="form-row-first">
-						<option value="credit" selected>Standard Credit Card</option>
+             	</p>'
+			);
+			if ( $this->business_enabled == 'yes' ) {
+				$fields['card-business-field'] = '<p class="form-row form-row-wide">
+                	<label for="' . esc_attr( $this->id ) . '-card-business">' . __( 'Standard or Purchasing Card', 'woocommerce' ) . ' <span class="required">*</span></label>
+            		<select id="' . esc_attr( $this->id ) . '-card-business" name="' . esc_attr( $this->id ) . '-card-business" onChange="businessCard(this.options[this.selectedIndex].value)">
+						<option value="credit" selected="selected">Standard Credit Card</option>
             			<option value="purchasing">Purchasing/Business Card</option>
 				 	</select>
-				</p>'
-			);
+				</p>';
+				$fields['card-customer-code'] = '<p id="div1" class="form-row form-row-wide" style="display:none">
+					<label for="' . esc_attr( $this->id ) . '-customer-code">' . __( 'Customer Code or PO Number', 'woocommerce' ) . ' <span class="required">*</span></label>
+					<input type="text" class="input-text" name="' . esc_attr( $this->id ) . '-customer-code" maxlength="20"/>
+				</p>'; ?>
+				<script type="text/javascript">
+
+				function businessCard(objval){
+					var cardtype = objval;
+					var vis = "none";
+					if (cardtype == 'purchasing'){
+						vis = "block";
+					} 
+					document.getElementById('div1').style.display = vis;
+				}
+				</script>
+				
+				<?php
+			}
 			
 			
 			$this->credit_card_form( $args, $fields);
