@@ -21,7 +21,7 @@ function woocommerce_converge_init() {
 	class WC_Gateway_Converge extends WC_Payment_Gateway {
 
 		/**
-		 *Define Virtual Merchant Variables
+		 *Define Converge Variables
 		 */
 
 		public $merchant_id;
@@ -61,6 +61,7 @@ function woocommerce_converge_init() {
 			$this->cvv_enabled				= $this->settings['cvv_enabled'];
 			$this->avs_options				= $this->settings['avs_options'];
 			$this->business_enabled			= $this->settings['business_enabled'];
+			$this->ccauthonly_enabled		= $this->settings['ccauthonly_enabled'];
 		
 			// SSL check hook used on admin options to determine if SSL is enabled
 			add_action( 'admin_notices', array( &$this, 'ssl_check' ) );
@@ -90,64 +91,81 @@ function woocommerce_converge_init() {
 							'title' => __( 'Enable/Disable', 'woothemes' ),
 							'label' => __( 'Enable Converge', 'woothemes' ),
 							'type' => 'checkbox',
-							'description' => '',
+							'description' => __('Enable the Converge payment gateway', 'woothemes' ),
 							'default' => 'no'
 							),
 				'title' => array(
 								'title' => __( 'Title', 'woothemes' ), 
 								'type' => 'text', 
-								'description' => __( 'This controls the title which the user sees during checkout.', 'woothemes' ), 
+								'description' => __( 'The title the user will see during checkout.', 'woothemes' ), 
 								'default' => __( 'Credit Card / Debit Card', 'woothemes' )
 							), 		
 				'description' => array(
 								'title' => __( 'Description', 'woothemes' ), 
 								'type' => 'text', 
-								'description' => __( 'This controls the description which the user sees during checkout.', 'woothemes' ), 
+								'description' => __( 'The description the user will see during checkout.', 'woothemes' ), 
 								'default' => 'Pay with your credit card or debit card.'
 							),  
 				'testmode' => array(
 								'title' => __( 'Converge Test', 'woothemes' ), 
 								'label' => __( 'Enable Converge Test', 'woothemes' ), 
 								'type' => 'checkbox', 
-								'description' => __( 'Process transactions in Test Mode via the Converge Test account (demo.myvirtualmerchant.com). Contact Virtual Merchant at 1-800-377-3962 to request a unique test account', 'woothemes' ), 
+								'description' => __( 'Process transactions in Test Mode via the Converge Test account (demo.myvirtualmerchant.com).' .
+										 ' Contact Converge at 1-800-377-3962 to request a unique test account', 'woothemes' ), 
 								'default' => 'no'
 							), 
 				'merchant_id' => array(
 								'title' => __( 'Merchant ID', 'woothemes' ), 
 								'type' => 'text', 
-								'description' => __( 'Merchant ID provided by Converge.', 'woothemes' ), 
+								'description' => __( 'Merchant ID (or ssl_merchant_id) provided by Converge.', 'woothemes' ), 
 								'default' => ''
 							), 
 				'user_id' => array(
 								'title' => __( 'User ID', 'woothemes' ), 
 								'type' => 'text', 
-								'description' => __( 'User ID provided by Converge.', 'woothemes' ), 
+								'description' => __( 'User ID (or ssl_user_id) provided by Converge.', 'woothemes' ), 
 								'default' => ''
 							),
 				'pin' => array(
 								'title' => __( 'pin', 'woothemes' ), 
 								'type' => 'text', 
-								'description' => __( 'pin provided by Converge.', 'woothemes' ), 
+								'description' => __( 'pin (or ssl_pin) provided by Converge.', 'woothemes' ), 
 								'default' => ''
 							),
 				'business_enabled' => array(
-							'title' => __( 'Enable Purchasing Cards', 'woothemes' ),
-							'label' => __( 'Enable the Use of Business Cards / Purchasing Cards', 'woothemes' ),
+							'title' => __( 'Purchasing Cards', 'woothemes' ),
+							'label' => __( 'Enable the Use of Purchasing Cards', 'woothemes' ),
+							'description' => __( 'A purchasing card is a form of company charge card that allows goods and ' .
+									 'services to be procured without using a traditional purchasing process.', 'woothemes'),
 							'type' => 'checkbox',
 							'default' => 'no'
 							),
+				'ccauthonly_enabled' => array(
+						'title' => __( 'Authorization Only', 'woothemes' ),
+						'label' => __( 'Enable authorization only purchases.', 'woothemes' ),
+						'description' => __( 'This type of transaction creates an authorization with the card issuing ' . 
+											'bank that holds the funds until you wish to manually capture them.' . 
+								' If enabled, you will have to manually convert the authorization to a sale using ' . 
+								'the Converge terminal. An example use for this option is if you wish to finalize the ' . 
+								'purchase only when the item is shipped.', 'woothemes' ),
+						'type' => 'checkbox',
+						'default' => 'no'
+				),
 				'cvv_enabled' => array(
-								'title' => __( 'Enable CSC Authentication', 'woothemes' ), 
+								'title' => __( 'CSC Authentication', 'woothemes' ), 
 								'label' => __( 'Enable CSC Authentication', 'woothemes' ), 
 								'type' => 'checkbox', 
-								//'description' => __( 'This option must also be enabled on your Converge account as a Post-Processing Rule under Business Rules. Contact Converge if you have any questions.', 'woothemes' ), 
+								'description' => __( 'Verify the card security code (or CVV) prior to authorizing the ' .
+										'credit card purchase.', 'woothemes' ), 
 								'default' => 'no'
 							),	
 				'avs_options' => array(
-								'title' => __( 'Enable AVS Authentication', 'woothemes' ), 
-								'description' => __( 'AVS Authentication Level', 'woothemes' ), 
+								'title' => __( 'AVS Authentication', 'woothemes' ), 
+								'description' => __( 'The Address Verification System (AVS) is a system used to verify the ' .
+										'address of a person claiming to own a credit card. Set the desired level of ' .
+										'AVS security', 'woothemes' ), 
      							'type' => 'select',
-     							'default' => 'None',
+     							'default' => 'none',
      							'options' => array(
      									'none' => 'Disable AVS Verification',
      									'address_or_zip' => 'Low - Either Address or Zip Match',
@@ -168,9 +186,13 @@ function woocommerce_converge_init() {
 			?>
 			<h3><?php _e( 'Converge', 'woothemes' ); ?></h3>
 			<p>	
-				<?php _e( 'Converge works by adding credit card fields on the checkout and then sending the details to Converge for verification.', 'woothemes' ); ?><br />
+				<?php _e( 'Accept credit card payments with this payment gateway for Elavon\'s Converge ' .
+					'payment platform (formerly Virtual Merchant). Automatically perform Address Verification ' .
+					'Service and Card Security Code checks for each purchase. Enable the authorization only ' . 
+					'feature, and manually accept the payment at a later time (for example, when the product ' .
+					'is shipped).', 'woothemes' ); ?><br />
 				<?php _e( "<strong><u>WARNING:</u></strong> WooCommerce is currently set to use '" . get_woocommerce_currency() . "' currency.", 'woothemes'); ?>
-				<?php _e( ' Please make sure your Virtual Merchant account is set to accept this currency.', 'woothemes'); ?>
+				<?php _e( ' Please make sure your Converge account is set to accept this currency.', 'woothemes'); ?>
 			</p>
 			<table class="form-table">
 				<?php $this->generate_settings_html(); ?>
@@ -232,7 +254,7 @@ function woocommerce_converge_init() {
 				echo wpautop( wptexturize( trim( $description ) ) );
 			}
 			
-			// @ TODO Customize credit card form
+			// Build the custom credit card form
 			$args = array(
 				'fields_have_names' => true,
 			);
@@ -251,6 +273,8 @@ function woocommerce_converge_init() {
                 	<input id="' . esc_attr( $this->id ) . '-card-cvc" class="input-text wc-credit-card-form-card-cvc" type="text" autocomplete="off" placeholder="' . __( 'CVC', 'woocommerce' ) . '" name="' . ( $args['fields_have_names'] ? $this->id . '-card-cvc' : '' ) . '" />
              	</p>'
 			);
+			
+			// If the purchasing card option is enabled, add the purchasing card menus and Javascript
 			if ( $this->business_enabled == 'yes' ) {
 				$fields['card-business-field'] = '<p class="form-row form-row-wide">
                 	<label for="' . esc_attr( $this->id ) . '-card-business">' . __( 'Standard or Purchasing Card', 'woocommerce' ) . ' <span class="required">*</span></label>
@@ -260,7 +284,7 @@ function woocommerce_converge_init() {
 				 	</select>
 				</p>';
 				$fields['card-customer-code'] = '<p id="div1" class="form-row form-row-wide" style="display:none">
-					<label for="' . esc_attr( $this->id ) . '-customer-code">' . __( 'Customer Code or PO Number', 'woocommerce' ) . ' <span class="required">*</span></label>
+					<label for="' . esc_attr( $this->id ) . '-customer-code">' . __( 'Customer Code/Number (e.g. Accounting Code or PO Number)', 'woocommerce' ) . ' <span class="required">*</span></label>
 					<input type="text" class="input-text" name="' . esc_attr( $this->id ) . '-customer-code" maxlength="20"/>
 				</p>'; ?>
 				<script type="text/javascript">
@@ -278,7 +302,7 @@ function woocommerce_converge_init() {
 				<?php
 			}
 			
-			
+			// Build the form
 			$this->credit_card_form( $args, $fields);
 
 		}
@@ -293,6 +317,8 @@ function woocommerce_converge_init() {
 			$card_number		= str_replace( array(' ', '-'), '', $_POST['converge-card-number']);
 			$card_csc			= isset( $_POST['converge-card-cvc'] ) ? $_POST['converge-card-cvc'] : '';
 			$card_expiration	= str_replace( array( '/', ' '), '', $_POST['converge-card-expiry'] );
+			$card_personal_business =  isset( $_POST['converge-card-business'] ) ? $_POST['converge-card-business'] : '';
+			$customer_code = isset( $_POST['converge-customer-code'] ) ? $_POST['converge-customer-code'] : '';
 
 			// Validate plugin settings
 			if ( ! $this->validate_settings() ) {
@@ -311,8 +337,8 @@ function woocommerce_converge_init() {
 			}
 
 			$cvv_enabled = $this->cvv_enabled;
-			
 			$avs_options = $this->avs_options;
+			$transaction_type = ($this->ccauthonly_enabled == "yes") ? "ccauthonly" : "ccsale";
 			
 			$authorization = array(
 					'ssl_merchant_id'			=> $this->merchant_id,
@@ -333,7 +359,7 @@ function woocommerce_converge_init() {
 					'ssl_merchant_id'			=> $this->merchant_id,
 					'ssl_user_id'				=> $this->user_id,
 					'ssl_pin'					=> $this->pin,
-					'ssl_transaction_type'		=> "ccsale",
+					'ssl_transaction_type'		=> $transaction_type,
 					'ssl_show_form'				=> "false",
 					'ssl_card_number'			=> $card_number,
 					'ssl_exp_date'				=> $card_expiration,
@@ -351,38 +377,41 @@ function woocommerce_converge_init() {
 					'ssl_result_format'			=> 'ascii',
 					'ssl_test_mode' 			=>'false',
 				);
-									
+			
+			// If this is a purchasing card, add the customer code to the fields array
+			if ( $card_personal_business == 'purchasing' ) {
+				$fields['ssl_customer_code'] = $customer_code;
+			}	
+
 			// Verify the transaction (CVV and AVS checks)
-			try{
-				//execute wp_remote_post
-				$authorization_result = wp_remote_post( $url, array (
-						'method'	=> 'POST',
-						'timeout'	=> 90,
-						'sslverify'	=> false,
-						'body'		=> http_build_query($authorization)
-					)
-				);
-
-				//Check for wp_remote_post errors
-				if ( is_wp_error( $authorization_result ) ) 
-					throw new Exception( 'There was an error during authorization' );
-				if ( empty( $authorization_result['body'] ) ) 
-					throw new Exception( 'Empty Converge Output during authorization.' );
-
-				//parse the resulting array
-				parse_str( str_replace( array( "\n", "\r" ), '&', $authorization_result['body'] ), $authorization_output );
-				
-				// Used for Testing
-
-				//parse_str("ssl_result=0&ssl_result_message=ssl_result_message&ssl_avs_response=A&ssl_cvv2_response=M&errorCode=errorCode&errorName=errorName", $authorization_output);
-				//parse_str("ssl_result=0&ssl_result_message=ssl_result_message&ssl_avs_response=X&ssl_cvv2_response=M&errorCode=A&errorMessage=this is a test message&errorName=Error", $authorization_output);
-
-			}
-
-			//Catch any errors caused by wp_remote_post
-			catch( Exception $e ) {
-				wc_add_notice(__( 'There was a connection error', 'woothemes' ) . ': "' . $e->getMessage() . '"', $notice_type = 'error' );
-				return;
+			if($cvv_enabled == 'yes' || $avs_options != 'none')
+			{
+				try{
+					//execute wp_remote_post
+					$authorization_result = wp_remote_post( $url, array (
+							'method'	=> 'POST',
+							'timeout'	=> 90,
+							'sslverify'	=> false,
+							'body'		=> http_build_query($authorization)
+						)
+					);
+	
+					//Check for wp_remote_post errors
+					if ( is_wp_error( $authorization_result ) ) 
+						throw new Exception( 'There was an error during authorization' );
+					if ( empty( $authorization_result['body'] ) ) 
+						throw new Exception( 'Empty Converge Output during authorization.' );
+	
+					//parse the resulting array
+					parse_str( str_replace( array( "\n", "\r" ), '&', $authorization_result['body'] ), $authorization_output );
+					
+				}
+	
+				//Catch any errors caused by wp_remote_post
+				catch( Exception $e ) {
+					wc_add_notice(__( 'There was a connection error', 'woothemes' ) . ': "' . $e->getMessage() . '"', $notice_type = 'error' );
+					return;
+				}
 			}
 						
 			/**
@@ -407,7 +436,7 @@ function woocommerce_converge_init() {
 			 *Check for Valid AVS in the wp_remote_post results
 			 */
 			function avs_check( $avs_response, $avs_options ) {
-			
+				
 				if ( $avs_options != "none" ) {
 					if( $avs_options == "strict") {
 						$compare_array = array("X", "Y", "F", "D", "M");		
@@ -429,10 +458,18 @@ function woocommerce_converge_init() {
 					return true;
 				}
 			}
-
+			
+			
+			/* hard coded variables for testing AVS and CSC Respoonses
+			$authorization_output['ssl_cvv2_response'] = 'M';
+			$authorization_output['ssl_avs_response'] = 'X';
+			*/
+			
+			
 			//determine if the authorization was successful
-			if ( cvv_check( $authorization_output['ssl_cvv2_response'], $cvv_enabled )  && 
-				avs_check( $authorization_output['ssl_avs_response'], $avs_options ) ) {
+			if ( ( $cvv_enabled == 'no' && $avs_options == 'none' ) || 
+				 ( cvv_check( $authorization_output['ssl_cvv2_response'], $cvv_enabled )  && 
+				avs_check( $authorization_output['ssl_avs_response'], $avs_options ) ) ) {	
 				
 				//Execute the actual payment
 				try{
@@ -453,8 +490,6 @@ function woocommerce_converge_init() {
 					//parse the resulting array
 					parse_str( str_replace( array( "\n", "\r" ), '&', $result['body'] ), $output );
 					
-					// Used for testing
-					// parse_str("ssl_result=1&ssl_result_message=ssl_result_message&errorCode=error core&errorMessage=error message&errorName=payment Error", $output);
 				}
 
 				//Catch any errors caused by wp_remote_post
@@ -530,14 +565,14 @@ function woocommerce_converge_init() {
 				wc_add_notice(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '', $notice_type = 'error');
 			}
 		}
-
+		
 
 		/**
 		 * Validate plugin settings
 		 */
 		function validate_settings() {
 
-			//Check for the Virtual Merchant merchant id, pin, and user id
+			//Check for the Converge merchant id, pin, and user id
 			if ( ! $this->merchant_id || !$this->pin || ! $this->user_id ) {
 				return false;
 			}
@@ -547,7 +582,7 @@ function woocommerce_converge_init() {
 	}
 
 	/**
-	 * Add the Virtual Merchant Gateway to WooCommerce
+	 * Add the Converge Gateway to WooCommerce
 	 */
 	function add_converge_gateway( $methods ) {
 		$methods[] = 'WC_Gateway_converge';
