@@ -364,6 +364,7 @@ function woocommerce_converge_init() {
 					'ssl_card_number'			=> $card_number,
 					'ssl_exp_date'				=> $card_expiration,
 					'ssl_amount'				=> $order->order_total,
+					//'ssl_transaction_currency'  => $order->get_order_currency(),
 					'ssl_salestax'				=> $order->get_total_tax(),
 					'ssl_cvv2cvc2_indicator'	=> '1',
 					'ssl_cvv2cvc2'				=> $card_csc,
