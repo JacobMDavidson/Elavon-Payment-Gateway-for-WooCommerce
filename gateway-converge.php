@@ -62,6 +62,7 @@ function woocommerce_converge_init() {
 			$this->avs_options				= $this->settings['avs_options'];
 			$this->business_enabled			= $this->settings['business_enabled'];
 			$this->ccauthonly_enabled		= $this->settings['ccauthonly_enabled'];
+			$this->debug_enabled			= $this->settings['debug_enabled'];
 		
 			// SSL check hook used on admin options to determine if SSL is enabled
 			add_action( 'admin_notices', array( &$this, 'ssl_check' ) );
@@ -173,8 +174,15 @@ function woocommerce_converge_init() {
      									'address' => 'Medium - Address Must Match',
      									'strict' => 'Strict - Both Address and Zip Must Match'
      								) 
-     						)
-								
+     						),
+				'debug_enabled' => array(
+							'title' => __( 'Debug', 'woothemes' ),
+							'label' => __( 'Enable Debug Mode', 'woothemes' ),
+							'type' => 'checkbox',
+							'description' => __( 'Warning, do not leave this option enabled on a live site ', 
+									'woothemes' ),
+							'default' => 'no'
+					)
 				);
 		}
 
@@ -338,6 +346,7 @@ function woocommerce_converge_init() {
 
 			$cvv_enabled = $this->cvv_enabled;
 			$avs_options = $this->avs_options;
+			$debug_enabled = $this->debug_enabled;
 			$transaction_type = ($this->ccauthonly_enabled == "yes") ? "ccauthonly" : "ccsale";
 			
 			$authorization = array(
@@ -402,9 +411,15 @@ function woocommerce_converge_init() {
 						throw new Exception( 'There was an error during authorization' );
 					if ( empty( $authorization_result['body'] ) ) 
 						throw new Exception( 'Empty Converge Output during authorization.' );
-	
+					
 					//parse the resulting array
 					parse_str( str_replace( array( "\n", "\r" ), '&', $authorization_result['body'] ), $authorization_output );
+					
+					// Check the query and response if debug is enabled
+					if ( $debug_enabled == 'yes') {
+						$debug_message = "Authorization Query: " . http_build_query($authorization);
+						$debug_message .= "\r\nAuthorization Response: " . $authorization_result['body'];
+					}
 					
 				}
 	
@@ -446,7 +461,7 @@ function woocommerce_converge_init() {
 					} else if ( $avs_options == "zip") {
 						$compare_array = array("X", "Y", "F", "D", "M", "W", "Z", "P");
 					} else {
-						$compare_array = array("X", "Y", "F", "D", "M", "A", "B", "W", "Z", "P");
+						$compare_array = array("X", "Y", "F", "D", "M", "A", "B", "W", "Z", "P", "U");
 					}
 
 					if( in_array($avs_response, $compare_array) ) {
@@ -490,6 +505,11 @@ function woocommerce_converge_init() {
 
 					//parse the resulting array
 					parse_str( str_replace( array( "\n", "\r" ), '&', $result['body'] ), $output );
+					// Check the query and response if debug is enabled
+					if ( $debug_enabled == 'yes') {
+						$debug_message .= "Transaction Query: " . http_build_query($authorization);
+						$debug_message .= "\r\nTransaction Response: " . $result['body'];
+					}
 					
 				}
 
@@ -507,63 +527,71 @@ function woocommerce_converge_init() {
 					$transactionid = '';
 				} 
 			
-				//determine if the transaction was successful
-				if ( isset( $output['ssl_result'] ) && ( $output['ssl_result'] == 0 ) ) {
-
-					//add transaction id to payment complete message, update woocommerce order and cart
-					$order->add_order_note( __( 'Converge payment completed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . ')' );
-					$order->payment_complete();
-					$woocommerce->cart->empty_cart();
-			
-					//redirect to the woocommerce thank you page
-					return array(
-						'result' => 'success',
-						//'redirect' => add_query_arg( 'key', $order->order_key, add_query_arg( 'order', $order_id, get_permalink( get_option( 'woocommerce_thanks_page_id' ) ) ) )
-						'redirect' => $order->get_checkout_order_received_url()
-					);
+				if ( $debug_enabled == 'no') {
+					//determine if the transaction was successful
+					if ( isset( $output['ssl_result'] ) && ( $output['ssl_result'] == 0 ) ) {
+	
+						//add transaction id to payment complete message, update woocommerce order and cart
+						$order->add_order_note( __( 'Converge payment completed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . ')' );
+						$order->payment_complete();
+						$woocommerce->cart->empty_cart();
 				
-				// There was an error during the payment process
-				} else {
-					if( isset( $output['ssl_result'] ) && ( $output['ssl_result'] != 0 ) ) {
-						$responsemessage = 'Payment was declined for the following reason: '. $output['ssl_result_message'] . '. Try again, or select a different card.';
-						if( isset( $output['errorCode'] ) ) {
-							$responsemessage .= '<br />(An error occured - ' . $output['errorName'] . ': ' . $output['errorMessage'] . ')';
-						}
-					} else if ( isset( $output['errorCode'] ) ) {
-						$responsemessage = 'An error occured - ' . $output['errorName'] . ': ' . $output['errorMessage'] . '';
+						//redirect to the woocommerce thank you page
+						return array(
+							'result' => 'success',
+							//'redirect' => add_query_arg( 'key', $order->order_key, add_query_arg( 'order', $order_id, get_permalink( get_option( 'woocommerce_thanks_page_id' ) ) ) )
+							'redirect' => $order->get_checkout_order_received_url()
+						);
+					
+					// There was an error during the payment process
 					} else {
-						$responsemessage =  "Unidentified Error. Try again, or select a different card.";
+						if( isset( $output['ssl_result'] ) && ( $output['ssl_result'] != 0 ) ) {
+							$responsemessage = 'Payment was declined for the following reason: '. $output['ssl_result_message'] . '. Try again, or select a different card.';
+							if( isset( $output['errorCode'] ) ) {
+								$responsemessage .= '<br />(An error occured - ' . $output['errorName'] . ': ' . $output['errorMessage'] . ')';
+							}
+						} else if ( isset( $output['errorCode'] ) ) {
+							$responsemessage = 'An error occured - ' . $output['errorName'] . ': ' . $output['errorMessage'] . '';
+						} else {
+							$responsemessage =  "Unidentified Error. Try again, or select a different card.";
+						}
+						$cancelNote = __( 'Converge payment failed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . '). ' . __( 'Payment was rejected due to an error', 'woothemes' ) . ': "' . $responsemessage . '". ';
+						$order->add_order_note( $cancelNote );
+						$order->update_status( 'Failed',__( 'Payment method was declined.', 'woothemes' ) );
+						wc_add_notice(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '', $notice_type = 'error');
 					}
+				}
+				
+			// There was an error during the verification process	
+			} else {	
+				
+				if ($debug_enabled == 'no') {
+					if( isset( $authorization_output['ssl_result'] ) && ( $authorization_output['ssl_result'] != 0 ) && 
+						cvv_check( $authorization_output['ssl_cvv2_response'], $cvv_enabled ) && 
+						avs_check( $authorization_output['ssl_avs_response'], $avs_options )) {
+						$responsemessage = 'Payment was declined for the following reason: '. $authorization_output['ssl_result_message'] . '. Try again, or select a different card.';
+						if( isset( $authorization_output['errorCode'] ) ) {
+							$responsemessage .=  '<br />(An error occured - ' . $authorization_output['errorName'] . ': ' . $authorization_output['errorMessage'] . ')';
+						}
+					} else if ( isset( $authorization_output['errorCode'] ) ) {
+						$responsemessage = 'An error occured - ' . $authorization_output['errorName'] . ': ' . $authorization_output['errorMessage'] . '';
+					} else if ( ! cvv_check( $authorization_output['ssl_cvv2_response'], $cvv_enabled ) ) {
+						$responsemessage = "Payment was declined because the Card Security Code is not correct. Try again, or select a different card.";
+					} else if ( ! avs_check( $authorization_output['ssl_avs_response'], $avs_options ) ) {
+					$responsemessage =  "Payment was declined because the address could not be verified (AVS Response Code " . $authorization_output['ssl_avs_response'] .
+										"). Try again, or select a different card.";
+					} else {
+					$responsemessage =  "Unidentified Error. Try again, or select a different card.";
+					}
+					
 					$cancelNote = __( 'Converge payment failed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . '). ' . __( 'Payment was rejected due to an error', 'woothemes' ) . ': "' . $responsemessage . '". ';
 					$order->add_order_note( $cancelNote );
 					$order->update_status( 'Failed',__( 'Payment method was declined.', 'woothemes' ) );
 					wc_add_notice(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '', $notice_type = 'error');
 				}
-				
-			// There was an error during the verification process	
-			} else {	
-				if( isset( $authorization_output['ssl_result'] ) && ( $authorization_output['ssl_result'] != 0 ) && 
-					cvv_check( $authorization_output['ssl_cvv2_response'], $cvv_enabled ) && 
-					avs_check( $authorization_output['ssl_avs_response'], $avs_options )) {
-					$responsemessage = 'Payment was declined for the following reason: '. $authorization_output['ssl_result_message'] . '. Try again, or select a different card.';
-					if( isset( $authorization_output['errorCode'] ) ) {
-						$responsemessage .=  '<br />(An error occured - ' . $authorization_output['errorName'] . ': ' . $authorization_output['errorMessage'] . ')';
-					}
-				} else if ( isset( $authorization_output['errorCode'] ) ) {
-					$responsemessage = 'An error occured - ' . $authorization_output['errorName'] . ': ' . $authorization_output['errorMessage'] . '';
-				} else if ( ! cvv_check( $authorization_output['ssl_cvv2_response'], $cvv_enabled ) ) {
-					$responsemessage = "Payment was declined because the Card Security Code is not correct. Try again, or select a different card.";
-				} else if ( ! avs_check( $authorization_output['ssl_avs_response'], $avs_options ) ) {
-				$responsemessage =  "Payment was declined because the address could not be verified (AVS Response Code " . $authorization_output['ssl_avs_response'] .
-									"). Try again, or select a different card.";
-				} else {
-				$responsemessage =  "Unidentified Error. Try again, or select a different card.";
-				}
-				
-				$cancelNote = __( 'Converge payment failed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . '). ' . __( 'Payment was rejected due to an error', 'woothemes' ) . ': "' . $responsemessage . '". ';
-				$order->add_order_note( $cancelNote );
-				$order->update_status( 'Failed',__( 'Payment method was declined.', 'woothemes' ) );
-				wc_add_notice(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '', $notice_type = 'error');
+			}
+			if ( $debug_enabled == 'yes') {
+				wc_add_notice(__( 'Debug Message', 'woothemes' ) . ': ' . $debug_message . '', $notice_type = 'error');
 			}
 		}
 		
