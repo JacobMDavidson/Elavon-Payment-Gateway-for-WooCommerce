@@ -491,7 +491,7 @@ function woocommerce_converge_init() {
 				try{
 					
 					//execute wp_remote_post
-					$result = wp_remote_post( $url, array (
+					$transaction_result = wp_remote_post( $url, array (
 							'method'	=> 'POST',
 							'timeout'	=> 90,
 							'sslverify'	=> false,
@@ -500,15 +500,15 @@ function woocommerce_converge_init() {
 					);
 
 					//Check for wp_remote_post errors
-					if ( is_wp_error( $result ) ) throw new Exception( 'There was an error' );
-					if ( empty( $result['body'] ) ) throw new Exception( 'Empty Converge Output.' );
+					if ( is_wp_error( $transaction_result ) ) throw new Exception( 'There was an error' );
+					if ( empty( $transaction_result['body'] ) ) throw new Exception( 'Empty Converge Output.' );
 
 					//parse the resulting array
-					parse_str( str_replace( array( "\n", "\r" ), '&', $result['body'] ), $output );
+					parse_str( str_replace( array( "\n", "\r" ), '&', $transaction_result['body'] ), $output );
 					// Check the query and response if debug is enabled
 					if ( $debug_enabled == 'yes') {
-						$debug_message .= "Transaction Query: " . http_build_query($result);
-						$debug_message .= "\r\nTransaction Response: " . $result['body'];
+						$debug_message .= "Transaction Query: " . http_build_query($fields);
+						$debug_message .= "\r\nTransaction Response: " . $transaction_result['body'];
 					}
 					
 				}
