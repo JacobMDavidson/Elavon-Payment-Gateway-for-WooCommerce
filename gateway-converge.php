@@ -507,7 +507,7 @@ function woocommerce_converge_init() {
 					parse_str( str_replace( array( "\n", "\r" ), '&', $result['body'] ), $output );
 					// Check the query and response if debug is enabled
 					if ( $debug_enabled == 'yes') {
-						$debug_message .= "Transaction Query: " . http_build_query($authorization);
+						$debug_message .= "Transaction Query: " . http_build_query($result);
 						$debug_message .= "\r\nTransaction Response: " . $result['body'];
 					}
 					
