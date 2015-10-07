@@ -61,6 +61,7 @@ function woocommerce_virtualmerchant_init() {
 			$this->discover_enabled			= $this->settings['discover_enabled'];
 			$this->mastercard_enabled		= $this->settings['mastercard_enabled'];
 			$this->americanexpress_enabled	= $this->settings['americanexpress_enabled'];
+			$this->debug_enabled			= $this->settings['debug_enabled'];
 		
 			// SSL check hook used on admin options to determine if SSL is enabled
 			add_action( 'admin_notices', array( &$this, 'ssl_check' ) );
@@ -160,7 +161,16 @@ function woocommerce_virtualmerchant_init() {
 								'type' => 'checkbox', 
 								'description' => __( 'This option must also be enabled on your VirtualMerchant account as a Post-Processing Rule under Business Rules. Contact VirtualMerchant if you have any questions.', 'woothemes' ), 
 								'default' => 'no'
-							),							
+							),
+				'debug_enabled' => array(
+						'title' => __( 'Debug', 'woothemes' ),
+						'label' => __( 'Enable Debug Mode', 'woothemes' ),
+						'type' => 'checkbox',
+						'description' => __( 'Warning, do not leave this option enabled on a live site ',
+								'woothemes' ),
+						'default' => 'no'
+					)
+											
 				);
 		}
 
@@ -257,7 +267,7 @@ function woocommerce_virtualmerchant_init() {
 					<label for="virtualmerchant_card_type"><?php echo __( 'Card type', 'woocommerce' ) ?> <span class="required" style="display: inline;">*</span></label>
 					<select id="virtualmerchant_card_type" style="width: 80%" name="virtualmerchant_card_type" onChange="doIt(this.options[this.selectedIndex].value)">
 						<?php foreach ( $available_cards as $card ) : ?>
-							<option value="<?php echo $card ?>"><?php echo $card; ?></options>
+							<option value="<?php echo $card ?>"><?php echo $card; ?></option>
 						<?php endforeach; ?>
 					</select>
 				</p>
@@ -353,6 +363,7 @@ function woocommerce_virtualmerchant_init() {
 			}
 
 			$cvv_enabled = $this->cvv_enabled;
+			$debug_enabled = $this->debug_enabled;
 			$post_data = '';
 			$fields = array(
 					'ssl_merchant_id'			=> $this->merchant_id,
@@ -405,6 +416,12 @@ function woocommerce_virtualmerchant_init() {
 
 				//parse the resulting array
 				parse_str( str_replace( array( "\n", "\r" ), '&', $result['body'] ), $output );
+				
+				// Check the query and response if debug is enabled
+				if ( $debug_enabled == 'yes') {
+					$debug_message .= "Transaction Query: " . http_build_query($fields);
+					$debug_message .= "\r\nTransaction Response: " . $transaction_result['body'];
+				}
 			}
 
 			//Catch any errors caused by wp_remote_post
@@ -439,40 +456,44 @@ function woocommerce_virtualmerchant_init() {
 				}
 			}
 			
-			//determine if the transaction was successful
-			if ( isset( $output['ssl_result'] ) && ( $output['ssl_result'] == 0 ) && cvv_check( $output['ssl_cvv2_response'], $cvv_enabled ) ) {
-			
-				//add transaction id to payment complete message, update woocommerce order and cart
-				$order->add_order_note( __( 'VirtualMerchant payment completed<br />(Currency: '. 
-						$card_currency . ')<br />(Transaction ID: '. 
-						$transactionid . ')' , 'woothemes' ) );
-				$order->payment_complete();
-				$woocommerce->cart->empty_cart();
-			
-				//redirect to the woocommerce thank you page
-				return array(
-					'result' => 'success',
-					'redirect' => add_query_arg( 'key', $order->order_key, add_query_arg( 'order', $order_id, get_permalink( get_option( 'woocommerce_thanks_page_id' ) ) ) )
-				);
-			} else {
-			
-
-				if( isset( $output['ssl_result'] ) && cvv_check( $output['ssl_cvv2_response'], $cvv_enabled ) ) {
-					$responsemessage = 'Payment was declined for the following reason: '. $output['ssl_result_message'] . '. Try again, or select a different card.';
-				} else if( isset( $output['errorCode'] ) ) {
-					$responsemessage =  'Payment was declined for the following reason: ' . $output['errorName'] . ': ' . $output['errorMessage'] . 'Try again, or select a different card.';
-				} else if ( ! cvv_check( $output['ssl_cvv2_response'], $cvv_enabled ) ) {
-					$responsemessage = "Payment was declined because the Card Security Code is not correct. Try again, or select a different card.";
+			if ( $debug_enabled == 'no') {
+				//determine if the transaction was successful
+				if ( isset( $output['ssl_result'] ) && ( $output['ssl_result'] == 0 ) && cvv_check( $output['ssl_cvv2_response'], $cvv_enabled ) ) {
+				
+					//add transaction id to payment complete message, update woocommerce order and cart
+					$order->add_order_note( __( 'VirtualMerchant payment completed<br />(Currency: '. 
+							$card_currency . ')<br />(Transaction ID: '. 
+							$transactionid . ')' , 'woothemes' ) );
+					$order->payment_complete();
+					$woocommerce->cart->empty_cart();
+				
+					//redirect to the woocommerce thank you page
+					return array(
+						'result' => 'success',
+						'redirect' => add_query_arg( 'key', $order->order_key, add_query_arg( 'order', $order_id, get_permalink( get_option( 'woocommerce_thanks_page_id' ) ) ) )
+					);
 				} else {
-				$responsemessage =  "Unidentified Error. Try again, or select a different card.";
+				
+	
+					if( isset( $output['ssl_result'] ) && cvv_check( $output['ssl_cvv2_response'], $cvv_enabled ) ) {
+						$responsemessage = 'Payment was declined for the following reason: '. $output['ssl_result_message'] . '. Try again, or select a different card.';
+					} else if( isset( $output['errorCode'] ) ) {
+						$responsemessage =  'Payment was declined for the following reason: ' . $output['errorName'] . ': ' . $output['errorMessage'] . 'Try again, or select a different card.';
+					} else if ( ! cvv_check( $output['ssl_cvv2_response'], $cvv_enabled ) ) {
+						$responsemessage = "Payment was declined because the Card Security Code is not correct. Try again, or select a different card.";
+					} else {
+					$responsemessage =  "Unidentified Error. Try again, or select a different card.";
+					}
+	
+					$cancelNote = __( 'VirtualMerchant payment failed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . '). ' . __( 'Payment was rejected due to an error', 'woothemes' ) . ': "' . $responsemessage . '". ';
+					$order->add_order_note( $cancelNote );
+					$order->update_status( 'Failed',__( 'Payment method was declined.', 'woothemes' ) );
+					$woocommerce->add_error(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '');
 				}
-
-				$cancelNote = __( 'VirtualMerchant payment failed', 'woothemes' ) . '(Transaction ID: ' . $transactionid . '). ' . __( 'Payment was rejected due to an error', 'woothemes' ) . ': "' . $responsemessage . '". ';
-				$order->add_order_note( $cancelNote );
-				$order->update_status( 'Failed',__( 'Payment method was declined.', 'woothemes' ) );
-				$woocommerce->add_error(__( 'Payment Error', 'woothemes' ) . ': ' . $responsemessage . '');
 			}
-			
+			if ( $debug_enabled == 'yes') {
+				wc_add_notice(__( 'Debug Message', 'woothemes' ) . ': ' . $debug_message . '', $notice_type = 'error');
+			}	
 		}
 
 		/**
