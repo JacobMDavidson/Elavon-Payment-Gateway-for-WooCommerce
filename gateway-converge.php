@@ -385,7 +385,7 @@ function woocommerce_converge_init() {
 					'ssl_city'					=> $order->billing_city,
 					'ssl_state'					=> $order->billing_state,
 					'ssl_result_format'			=> 'ascii',
-					'ssl_test_mode' 			=>'false',
+					'ssl_test_mode' 			=>'false'
 				);
 			
 			// If this is a purchasing card, add the customer code to the fields array
